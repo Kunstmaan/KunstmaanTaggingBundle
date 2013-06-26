@@ -47,6 +47,12 @@ class Tag extends BaseTag
     protected $tagging;
 
     /**
+     * @Gedmo\Slug(fields={"name"})
+     * @ORM\Column(name="slug", type="string")
+     */
+    protected $slug;
+
+    /**
      * Get id
      *
      * @return int
@@ -124,6 +130,26 @@ class Tag extends BaseTag
     public function getUpdatedAt()
     {
         return $this->updatedAt;
+    }
+
+    /**
+     * Set slug
+     *
+     * @param $slug
+     */
+    public function setSlug($slug)
+    {
+        $this->slug = $slug;
+    }
+
+    /**
+     * Get slug
+     *
+     * @return mixed
+     */
+    public function getSlug()
+    {
+        return $this->slug;
     }
 
     public function getDefaultAdminType()
