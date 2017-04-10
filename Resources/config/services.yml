@@ -1,9 +1,13 @@
 parameters:
+    kuma_tagging.tag.class: 'Kunstmaan\TaggingBundle\Entity\Tag'
+    kuma_tagging.tag.repository: 'KunstmaanTaggingBundle:Tag'
+    kuma_tagging.tagging.class: 'Kunstmaan\TaggingBundle\Entity\Tagging'
+    kuma_tagging.event_listener.tag_relation_subscriber.class: 'Kunstmaan\TaggingBundle\EventListener\TagRelationSubscriber'
 
 services:
     kuma_tagging.tag_manager:
         class: Kunstmaan\TaggingBundle\Entity\TagManager
-        arguments: ['@doctrine.orm.entity_manager', 'Kunstmaan\TaggingBundle\Entity\Tag', 'Kunstmaan\TaggingBundle\Entity\Tagging']
+        arguments: ['@doctrine.orm.entity_manager', '%kuma_tagging.tag.class%', '%kuma_tagging.tagging.class%']
 
     kuma_tagging.listener:
         class: Kunstmaan\TaggingBundle\EventListener\TagsListener
@@ -16,7 +20,7 @@ services:
 
     kuma_tagging.clone.listener:
         class: Kunstmaan\TaggingBundle\EventListener\CloneListener
-        arguments: ['@doctrine.orm.entity_manager']
+        arguments: ['@kuma_tagging.tag_manager']
         tags:
             - { name: kernel.event_listener, event: kunstmaan_admin.postDeepCloneAndSave, method: postDeepCloneAndSave }
 
@@ -36,3 +40,9 @@ services:
         arguments: ['@kuma_tagging.tag_manager']
         tags:
             - { name: form.type }
+
+    kuma_tagging.event_listener.tag_relation_subscriber:
+        class: '%kuma_tagging.event_listener.tag_relation_subscriber.class%'
+        arguments: ['%kuma_tagging.tag.class%', '%kuma_tagging.tagging.class%']
+        tags:
+            - { name: doctrine.event_subscriber }

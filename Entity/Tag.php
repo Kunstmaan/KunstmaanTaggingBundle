@@ -6,7 +6,6 @@ use DoctrineExtensions\Taggable\Entity\Tag as BaseTag;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-
 use Kunstmaan\TaggingBundle\Form\TagAdminType;
 
 /**
@@ -42,7 +41,7 @@ class Tag extends BaseTag
     protected $updatedAt;
 
     /**
-     * @ORM\OneToMany(targetEntity="Kunstmaan\TaggingBundle\Entity\Tagging", mappedBy="tag", fetch="LAZY")
+     * Mapping happens in TagRelationSubscriber
      */
     protected $tagging;
 

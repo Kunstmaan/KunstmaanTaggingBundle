@@ -21,10 +21,6 @@ class Tagging extends BaseTagging
      */
     protected $id;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Kunstmaan\TaggingBundle\Entity\Tag", inversedBy="tagging")
-     * @ORM\JoinColumn(name="tag_id", referencedColumnName="id", onDelete="CASCADE")
-     */
     protected $tag;
 
     /**
