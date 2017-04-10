@@ -14,6 +14,13 @@ class TagManager extends BaseTagManager
 
     const TAGGING_HYDRATOR = 'taggingHydrator';
 
+    public function copyTags($origin, $destination)
+    {
+        $tags = $this->getTagging($origin);
+        $this->replaceTags($tags, $destination);
+        $this->saveTagging($destination);
+    }
+
     public function loadTagging(BaseTaggable $resource)
     {
         if ($resource instanceof LazyLoadingTaggableInterface) {
@@ -42,6 +49,43 @@ class TagManager extends BaseTagManager
 
 
     /**
+     * @param $tag
+     * @return array
+     */
+    public function getResourcesByTag($tag, $entityName, $type)
+    {
+        $em = $this->em;
+
+        $config = $em->getConfiguration();
+        if (is_null($config->getCustomHydrationMode(TagManager::TAGGING_HYDRATOR))) {
+            $config->addCustomHydrationMode(TagManager::TAGGING_HYDRATOR, 'Doctrine\ORM\Internal\Hydration\ObjectHydrator');
+        }
+
+        if ($type) {
+            $joinCriteria = 't2.resourceType = :type and t2.resourceId = p.id';
+        }
+        else {
+            $joinCriteria = 't2.resourceId = p.id';
+        }
+
+        $qb = $em
+            ->createQueryBuilder()
+            ->select('p')
+            ->from($entityName, 'p')
+            ->innerJoin($this->taggingClass, 't2', Expr\Join::WITH, $joinCriteria)
+            ->innerJoin('t2.tag', 't', Expr\Join::WITH, 't.name = :tag')
+            ->setParameter('tag', $tag);
+
+        if($type) {
+            $qb->setParameter('type', $type);
+        }
+
+        $query = $qb->getQuery();
+        $pages = $query->getResult(TagManager::TAGGING_HYDRATOR);
+
+        return $pages;
+    }
+    /**
      * Gets all tags for the given taggable resource
      *
      * @param BaseTaggable $resource Taggable resource
@@ -56,19 +100,38 @@ class TagManager extends BaseTagManager
             $config->addCustomHydrationMode(self::TAGGING_HYDRATOR, 'Doctrine\ORM\Internal\Hydration\ObjectHydrator');
         }
 
-        return $em
+        $qb = $em
             ->createQueryBuilder()
-
             ->select('t')
             ->from($this->tagClass, 't')
-
             ->innerJoin('t.tagging', 't2', Expr\Join::WITH, 't2.resourceId = :id AND t2.resourceType = :type')
             ->setParameter('id', $resource->getTaggableId())
-            ->setParameter('type', $resource->getTaggableType())
+            ->setParameter('type', $resource->getTaggableType());
 
-            ->getQuery()
+        $query = $qb
+            ->getQuery();
+        $result = $query
             ->getResult(self::TAGGING_HYDRATOR);
+
+        return $result;
     }
+
+    public function getTagsByResourceType($type)
+    {
+
+        $qb = $this->em->createQueryBuilder()
+            ->select('t.name, COUNT(t2) as cnt')
+            ->from($this->tagClass, 't')
+            ->leftJoin('t.tagging', 't2', Expr\Join::WITH, 't2.resourceType = \'' . $type . '\'')
+            ->groupBy('t')
+            ->orderBy('cnt', 'desc')
+            ->having('cnt > 0');
+
+        $query = $qb->getQuery();
+        $results = $query->execute();
+        return $results;
+    }
+
 
     public function findById($id)
     {
@@ -92,9 +155,16 @@ class TagManager extends BaseTagManager
 
     public function findAll()
     {
-        $tagsRepo = $this->em->getRepository('KunstmaanTaggingBundle:Tag');
+        $tagsRepo = $this->em->getRepository($this->tagClass);
 
         return $tagsRepo->findAll();
+    }
+
+    public function findByName($name)
+    {
+        $tagsRepo = $this->em->getRepository($this->tagClass);
+
+        return $tagsRepo->findOneBy(['name' => $name]);
     }
 
     public function findRelatedItems(Taggable $item, $class, $locale, $nbOfItems=1)

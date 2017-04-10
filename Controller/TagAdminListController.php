@@ -23,7 +23,7 @@ class TagAdminListController extends AdminListController
     public function getAdminListConfigurator()
     {
         if (!isset($this->configurator)) {
-            $this->configurator = new TagAdminListConfigurator($this->getEntityManager());
+            $this->configurator = new TagAdminListConfigurator($this->getEntityManager(), null, $this->getParameter('kuma_tagging.tag.repository'));
         }
 
         return $this->configurator;
@@ -81,7 +81,7 @@ class TagAdminListController extends AdminListController
     {
         $search = $request->get('term');
         $em = $this->getDoctrine()->getManager();
-        $qb = $em->getRepository('KunstmaanTaggingBundle:Tag')->createQueryBuilder('n')
+        $qb = $em->getRepository($this->getParameter('kuma_tagging.tag.repository'))->createQueryBuilder('n')
             ->where('n.name LIKE :search')
             ->orderBy('n.name', 'ASC')
             ->setParameter('search', '%' . $search . '%');
